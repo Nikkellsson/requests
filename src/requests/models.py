@@ -523,33 +523,8 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         )
 
         if is_stream:
-            try:
-                length = super_len(data)
-            except (TypeError, AttributeError, UnsupportedOperation):
-                length = None
-
+            self._prepare_stream_headers(data, files)
             body = data
-
-            if getattr(body, "tell", None) is not None:
-                # Record the current file position before reading.
-                # This will allow us to rewind a file in the event
-                # of a redirect.
-                try:
-                    self._body_position = body.tell()
-                except OSError:
-                    # This differentiates from None, allowing us to catch
-                    # a failed `tell()` later when trying to rewind the body
-                    self._body_position = object()
-
-            if files:
-                raise NotImplementedError(
-                    "Streamed bodies and files are mutually exclusive."
-                )
-
-            if length:
-                self.headers["Content-Length"] = builtin_str(length)
-            else:
-                self.headers["Transfer-Encoding"] = "chunked"
         else:
             # Multi-part file uploads.
             if files:
@@ -569,6 +544,34 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
                 self.headers["Content-Type"] = content_type
 
         self.body = body
+
+    def _prepare_stream_headers(self, data, files):
+        """Record the stream position and select the transfer headers."""
+        try:
+            length = super_len(data)
+        except (TypeError, AttributeError, UnsupportedOperation):
+            length = None
+
+        if getattr(data, "tell", None) is not None:
+            # Record the current file position before reading.
+            # This will allow us to rewind a file in the event
+            # of a redirect.
+            try:
+                self._body_position = data.tell()
+            except OSError:
+                # This differentiates from None, allowing us to catch
+                # a failed `tell()` later when trying to rewind the body
+                self._body_position = object()
+
+        if files:
+            raise NotImplementedError(
+                "Streamed bodies and files are mutually exclusive."
+            )
+
+        if length:
+            self.headers["Content-Length"] = builtin_str(length)
+        else:
+            self.headers["Transfer-Encoding"] = "chunked"
 
     def prepare_content_length(self, body):
         """Prepare Content-Length header based on request method and body"""

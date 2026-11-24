@@ -1,0 +1,4 @@
+line-length = 88
+target-version = "py39"
+[lint]
+select = ["E501", "E722", "F", "B006", "B012", "B904"]

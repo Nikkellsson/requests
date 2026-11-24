@@ -380,15 +380,15 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         return f"<PreparedRequest [{self.method}]>"
 
     def copy(self):
-        p = PreparedRequest()
-        p.method = self.method
-        p.url = self.url
-        p.headers = self.headers.copy() if self.headers is not None else None
-        p._cookies = _copy_cookie_jar(self._cookies)
-        p.body = self.body
-        p.hooks = self.hooks
-        p._body_position = self._body_position
-        return p
+        clone = PreparedRequest()
+        clone.method = self.method
+        clone.url = self.url
+        clone.headers = self.headers.copy() if self.headers is not None else None
+        clone._cookies = _copy_cookie_jar(self._cookies)
+        clone.body = self.body
+        clone.hooks = self.hooks
+        clone._body_position = self._body_position
+        return clone
 
     def prepare_method(self, method):
         """Prepares the given HTTP method."""

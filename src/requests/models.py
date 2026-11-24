@@ -594,19 +594,21 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             url_auth = get_auth_from_url(self.url)
             auth = url_auth if any(url_auth) else None
 
-        if auth:
-            if isinstance(auth, tuple) and len(auth) == 2:
-                # special-case basic HTTP auth
-                auth = HTTPBasicAuth(*auth)
+        if not auth:
+            return
 
-            # Allow auth to make its changes.
-            r = auth(self)
+        if isinstance(auth, tuple) and len(auth) == 2:
+            # special-case basic HTTP auth
+            auth = HTTPBasicAuth(*auth)
 
-            # Update self to reflect the auth changes.
-            self.__dict__.update(r.__dict__)
+        # Allow auth to make its changes.
+        r = auth(self)
 
-            # Recompute Content-Length
-            self.prepare_content_length(self.body)
+        # Update self to reflect the auth changes.
+        self.__dict__.update(r.__dict__)
+
+        # Recompute Content-Length
+        self.prepare_content_length(self.body)
 
     def prepare_cookies(self, cookies):
         """Prepares the given HTTP cookie data.
